@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Global Chat</title>
+    <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+      body{
+        font-family: Tahoma;
+      }
+      #chatbox{
+        width: 90%;
+        height: 730px;
+        margin: 0 auto;
+        font-size: 20px;
+        padding: 10px;
+        padding-top: 20px;
+        border-top: 1px solid #e8e8e8;
+      }
+      #messages{
+        height: 645px;
+        padding-bottom: 10px;
+        overflow: auto;
+      }
+      #chatbox form{
+        width: 99.7%;
+      }
+      #message-to-send{
+        width: 100%;
+        height: 35px;
+        font-size: 15px;
+        padding-left: 10px;
+
+        padding-top: 20px;
+        border: none;
+        border-bottom: 1px solid #e8e8e8;
+        float: left;
+      }
+      input[type="text"]:focus{
+        outline: none;
+      }
+      .message{
+        margin-bottom: 1px;
+        font-size: 15px;
+      }
+      .timestamp{
+        float: left;
+        margin-right: 6px;
+        color: grey;
+        font-size: 15px;
+        margin-top: 5px;
+      }
+      .old-message{
+        /*background: linear-gradient(140deg, #f2f2f2 1%, #FFFFFF 99%);*/
+        color: grey;
+      }
+      #load-previous{
+        width: 200px;
+        margin: 0 auto;
+        color: lightblue;
+        font-size: 12px;
+      }
+      #load-previous:hover{
+        cursor: pointer;
+        color: grey;
+      }
+      #username{
+        width: 200px;
+        height: 35px;
+        font-size: 20px;
+        padding-left: 10px;
+        float: left;
+        border: none;
+        border-bottom: 1px solid #e8e8e8;
+        margin-left: 10px;
+        padding-top: 20px;
+      }
+      .top-chatbox{
+        float: left;
+        margin-left: 40px;
+      }
+      #top-chatbox-div{
+        width: 700px;
+        padding-bottom: 40px;
+        margin-left: 45px;
+        margin-top: 70px;
+      }
+      .delete{
+        font-size: 15px;
+        margin-top: 5px;
+        float: left;
+        color: red;
+      }
+      .delete:hover{
+        cursor: pointer;
+        color: #a30000;
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+
+      var socket;
+
+      $(function(){
+        socket = io.connect();
+      });
+
+      var messagesLimit=26;
+      var offset = 0;
+      var newmessages = 0;
+      var timestamp;
+
+      function loadMessages(messagesToLoad){
+        offset = offset + messagesToLoad + newmessages;
+        console.log("Offset " + offset);
+        socket.emit("load messages", messagesLimit, offset);
+        offset = offset - newmessages;
+      }
+
+      function deleteMessage(messageIDtoDelete){
+        socket.emit("delete message", messageIDtoDelete);
+      }
+
+    </script>
+    <div id="top-chatbox-div">
+      <div class="top-chatbox"><b>GLOBAL CHAT</b> </div><div class="top-chatbox">Eingeloggt als: </div><div id="users-online" class="top-chatbox">User online: </div><div class="top-chatbox">Nachrichten geschrieben: </div>
+    </div>
+    <div id="chatbox">
+      <div class="messages" id="messages">
+        <div id="load-previous" onclick="loadMessages(20)">load previous</div>
+        <div id="placeholder-div"></div>
+      </div>
+      <form id="messageForm">
+        <label hidden>Message:</label>
+        <input type="text" placeholder="Nachricht schreiben" id="message-to-send">
+        <input hidden type="submit" class="submit" value="Senden!">
+      </form>
+    </div>
+    <script>
+
+      function updateScroll(){
+        var element = document.getElementById("messages");
+        element.scrollTop = element.scrollHeight;
+      }
+
+      $(function(){
+
+        var $messageForm = $("#messageForm");
+        var $messageToSend = $("#message-to-send");
+        var $messages = $("#messages");
+        var $placeholderdiv = $("#placeholder-div");
+        var $usersonline = $("#users-online");
+        var allMessages = 0;
+        socket.emit("load messages", messagesLimit, offset);
+
+        socket.emit("get all messages");
+
+        socket.on("set all messages", function(data){
+          allMessages = data;
+          updateScroll();
+        });
+
+        //OLD MESSAGES
+
+        socket.on("set loaded messages", function(data){
+          console.log(data);
+          for(var key in data) {
+            var value = data[key];
+            var timestampRaw = value['timestamp'].split("T");
+            var timestamp = timestampRaw[1].split(".")[0];
+            $placeholderdiv.prepend("<div id='"+value['id']+"' class='message old-message'><div class='timestamp'>" + timestamp + "  ID: <b>"+value['id']+"</b> |</div><div style='padding-top: 5px;'>" + value['message'] + "</div></div>");
+          }
+        });
+
+        //---------------------------
+
+        $messageForm.submit(function(e){
+          if($messageToSend.val().trim().length == 0){
+            alert("Gib was ein bevor du was schickst qija nanen");
+          }else{
+            e.preventDefault();
+            console.log("Submitted");
+            socket.emit("send message", $messageToSend.val());
+            $messageToSend.val("");
+          }
+        });
+
+        //NEW MESSAGES
+
+        socket.on("new message", function(data){
+          newmessages = newmessages + 1;
+          allMessages = allMessages + 1;
+          var currentdate = new Date();
+          timestamp = ("0"+currentdate.getHours()).slice(-2) + ":" + ("0"+currentdate.getMinutes()).slice(-2) + ":" + ("0"+currentdate.getSeconds()).slice(-2);
+          $messages.append("<div onclick='deleteMessage("+allMessages+")' class='delete'><b>X&nbsp</b></div><div id='"+allMessages+"' class='message'><div class='timestamp'>"+timestamp+"  ID: <b>"+allMessages+"</b> |</div><div style='padding-top: 5px;'>" +data.msg+ "</div></div>");
+          updateScroll();
+        });
+
+        //---------------------------------------
+
+        socket.on("csc", function(data){
+          console.log("TEST TEST TEST " +  data);
+          document.getElementById("users-online").innerHTML = "User online: <b>" + data + "</b>";
+        });
+
+        //CHANGE DELETED MESSAGE
+
+        socket.on("change deleted message", function(messageIDtoChange){
+          document.getElementById(messageIDtoChange).innerHTML = "<div class='message'><div class='timestamp'>"+timestamp+"  ID: NA<b></b> |</div><div style='padding-top: 5px;'><i>Nachricht gelöscht</i></div></div>";
+        });
+
+      });
+    </script>
+  </body>
+</html>
