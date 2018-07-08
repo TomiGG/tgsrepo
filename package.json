@@ -1,0 +1,17 @@
+{
+  "name": "globalchat",
+  "version": "1.0.0",
+  "description": "Global Chat App",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Tomislav",
+  "license": "ISC",
+  "dependencies": {
+    "express": "*",
+    "mysql": "^2.15.0",
+    "npm": "^6.1.0",
+    "socket.io": "*"
+  }
+}
