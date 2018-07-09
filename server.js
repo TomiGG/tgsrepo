@@ -11,7 +11,7 @@ connections = [];
 var connection = mysql.createConnection({
   host     : 'localhost',
   user     : 'root',
-  password : 'test',
+  password : '',
   database : 'globalchat'
 });
 
@@ -53,7 +53,7 @@ io.sockets.on("connection", function(socket){
       if(err){
         throw err;
       }else{
-        console.log("Nachricht erfolgreich eingefügt!!!");
+        console.log("Nachricht erfolgreich eingefügt!!");
       }
     });
   });
