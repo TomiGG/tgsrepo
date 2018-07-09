@@ -25,7 +25,7 @@ connection.connect(function(err){
   }
 });
 
-server.listen(process.env.PORT || 3000);
+server.listen(process.env.PORT || 80);
 
 console.log("Server running ...");
 
