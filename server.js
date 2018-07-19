@@ -94,7 +94,7 @@ passport.deserializeUser(function(user_username, done) {
   done(null, user_username);
 });
 
-server.listen(process.env.PORT || 3000);
+server.listen(process.env.PORT || 80);
 
 console.log("Server running ...");
 
