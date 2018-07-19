@@ -1,0 +1,211 @@
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/jscolor.js"></script>
+<script>
+
+  var socket;
+
+  $(function(){
+    socket = io.connect();
+  });
+
+  var messagesLimit=26;
+  var offset = 0;
+  var newmessages = 0;
+  var timestamp;
+  var old_message=true;
+  var count = 0;
+
+  var urlRegex = /(([a-z]{3,6}:\/\/)|(^|\s))([a-zA-Z0-9\-]+\.)+[a-z]{2,13}[\.\?\=\&\%\/\w\-]*\b([^@]|$)/;
+
+  function loadMessages(messagesToLoad){
+    offset = offset + messagesToLoad + newmessages;
+    console.log("Offset " + offset);
+    socket.emit("load messages", messagesLimit, offset, "{{user.user_username}}");
+    offset = offset - newmessages;
+    old_message=true;
+  }
+
+  function deleteMessage(messageIDtoDelete){
+    socket.emit("delete message", messageIDtoDelete);
+  }
+
+</script>
+<div id="top-chatbox-div">
+  <div class="top-chatbox"><b>GLOBAL CHAT</b> </div><div class="top-chatbox">{{#if isAuthenticated}}Eingeloggt als: <b>{{user.user_username}}</b> {{else}}NA{{/if}}</div><div id="users-online" class="top-chatbox">User online: </div><div class="top-chatbox">MOTD: </div><div class="top-chatbox logout"><b><a href="/users/logout">LOGOUT</a></b></div>
+</div>
+<div id="channels"><div id="channels-german" class="channels-channel"><img title="WIP" src="/assets/ger_flag.png"></div><div id="channels-german" class="channels-channel"><img title="WIP" src="/assets/uk_flag.png"></div></div>
+<div id="chatbox">
+  <div class="messages" id="messages">
+    <div id="load-previous" onclick="loadMessages(20)">load previous</div>
+    <div id="placeholder-div"></div>
+  </div>
+  <form id="messageForm">
+    <button id="colorpicker" type="button" class="jscolor {valueElement: 'color_value'}"></button>
+    <label hidden>Message:</label>
+    <input type="text" placeholder="Nachricht schreiben" id="message-to-send">
+    <input hidden type="submit" class="submit" value="Senden!">
+  </form>
+</div>
+<script>
+
+  function updateScroll(){
+    var element = document.getElementById("messages");
+    element.scrollTop = element.scrollHeight;
+  }
+
+  function markMessage(element, id, user){
+    if(element.classList.contains('message_content_mark_active')){
+      element.classList.remove('message_content_mark_active');
+      socket.emit('remove mark from message', id, user);
+      var element2 = element.closest(".message").getElementsByClassName("message_content_mark_number");
+      for(var i = 0; i < element2.length; i++){
+        element2[i].innerHTML = parseInt(element2[i].innerHTML) - 1;
+      }
+    }else{
+      element.classList.add('message_content_mark_active');
+      socket.emit('mark message', id, user);
+      var element2 = element.closest(".message").getElementsByClassName("message_content_mark_number");
+      for(var i = 0; i < element2.length; i++){
+        element2[i].innerHTML = parseInt(element2[i].innerHTML) + 1;
+      }
+    }
+  }
+
+  $(function(){
+
+    var $messageForm = $("#messageForm");
+    var $messageToSend = $("#message-to-send");
+    var sender = "{{user.user_username}}";
+    var $messages = $("#messages");
+    var $placeholderdiv = $("#placeholder-div");
+    var $usersonline = $("#users-online");
+    var $colorpicker = $("button#colorpicker");
+    var allMessages = 0;
+
+    socket.emit("load messages first", messagesLimit, offset, "{{user.user_username}}");
+
+    socket.emit("get all messages");
+
+    socket.on("set all messages", function(data){
+      allMessages = data;
+      updateScroll();
+    });
+
+    socket.on('get all likes', function(){
+      //Durch jedes div in messages gehen, id nehmen, schauen wieviele likes id hat, replacen
+    });
+
+    socket.on('get user specified likes', function(user){
+      //datenbank mit allen geliketen nachrichten durchsuchen, schauen welche nachricht user geliked hat und diese dann einfügen
+    });
+
+    var message;
+
+    function setupMessage(message_id, timestamp, user, user_color, content, marks){
+      var userS = '"'+user+'"'
+      message = "<div id='"+message_id+"' class='message'>" + "<div class='message_timestamp'>" + timestamp + "&nbsp|</div><div onclick='markMessage(this, "+message_id+", "+userS+");' class='message_content_mark'></div><div class='message_marks_and_seperator' style='float: left; color: grey'><div style='float:left' class='message_content_mark_number'>"+marks+"</div>&nbsp|&nbsp</div>" + "<div class='message_user' style='color:"+user_color+";'><b>"+user+"</b>:&nbsp</div>" + "<div class='message_content'>" + content + "</div>" + "</div>";
+      if(old_message === true){
+        message = message.replace(message.match("class='message'")[0], "class = 'message old_message'");
+      }else{
+        //BLEIBT LEER
+      }
+      //if(url){
+        if(urlRegex.test(content) === true){
+          console.log(content.match(urlRegex));
+          if (content.match(urlRegex)[0].startsWith("http" || "https" || "wwww")){
+            message = message.replace(content.match(urlRegex)[0], "<a target='_blank' rel='noopener noreferrer' href='"+content.match(urlRegex)[0]+"'>" + content.match(urlRegex)[0] + "</a>")
+          }else{
+            message = message.replace(content.match(urlRegex)[0], "<a target='_blank' rel='noopener noreferrer' href='http://"+content.match(urlRegex)[0].trim()+"'>" + content.match(urlRegex)[0] + "</a>")
+          }
+        }else{
+          //BLEIBT LEER
+        }
+      //}else{
+
+      //}
+      if(user===sender && old_message===false){
+        message = "<div onclick='deleteMessage("+allMessages+")' class='message_delete'><b>X&nbsp</b></div>" + message;
+      }
+      return message;
+    }
+
+    //LOAD OLD MESSAGES
+
+    socket.on("set loaded messages", function(data){
+      console.log(data);
+      for(var key in data) {
+        var value = data[key];
+        var timestampRaw = value['timestamp'].split("T");
+        var timestamp = timestampRaw[1].split(".")[0];
+        $placeholderdiv.prepend(setupMessage(value['id'], timestamp, value['user'], "grey", value['message'], value['marks']));
+        //$placeholderdiv.prepend("<div id='"+value['id']+"' class='message old-message'><div class='message-details'>" + timestamp + " | </div><div hidden class='message-details'>ID: <b>"+value['id']+"</b> | </div><div class='message-details'><b>"+value['user']+":</b> </div><div style='padding-top: 5px;'>" + value['message'] + "</div></div>");
+      }
+      old_message=false;
+    });
+
+    socket.on("set marks for user", function(result){
+      for(var key in result){
+        var value = result[key];
+        var element = document.getElementById(value['marked']);
+        var element2 = element.getElementsByClassName("message_content_mark");
+        for(var i = 0; i < element2.length; i++){
+          element2[i].classList.add('message_content_mark_active');
+        }
+      }
+    });
+
+    //---------------------------
+
+    //SUBMIT MESSAGE
+
+    $messageForm.submit(function(e){
+      if($messageToSend.val().trim().length == 0){
+        alert("Gib was ein bevor du was schickst qija nanen");
+      }else{
+        e.preventDefault();
+        console.log("Submitted");
+        console.log("TEEEEEEEEEST" + sender);
+        newmessages = newmessages + 1;
+        allMessages = allMessages + 1;
+        var currentdate = new Date();
+        timestamp = ("0"+currentdate.getHours()).slice(-2) + ":" + ("0"+currentdate.getMinutes()).slice(-2) + ":" + ("0"+currentdate.getSeconds()).slice(-2);
+        var color = document.getElementById("colorpicker").style.backgroundColor;
+        $messages.append(setupMessage(allMessages, timestamp, sender, color, $messageToSend.val(), 0));
+        socket.emit("send message", $messageToSend.val(), sender, color);
+        updateScroll();
+        $messageToSend.val("");
+      }
+    });
+
+    //NEW MESSAGES FROM OTHERS
+
+    socket.on("new message", function(data, data2, data3){
+      newmessages = newmessages + 1;
+      allMessages = allMessages + 1;
+      var currentdate = new Date();
+      timestamp = ("0"+currentdate.getHours()).slice(-2) + ":" + ("0"+currentdate.getMinutes()).slice(-2) + ":" + ("0"+currentdate.getSeconds()).slice(-2);
+      $messages.append(setupMessage(allMessages, timestamp, data2, data3, data.msg));
+      updateScroll();
+    });
+
+    //---------------------------------------
+
+    //USERS ONLINE
+
+    socket.on("csc", function(data){
+      console.log("TEST TEST TEST " +  data);
+      document.getElementById("users-online").innerHTML = "User online: <b>" + data + "</b>";
+    });
+
+    //------------------------------------------
+
+    //CHANGE DELETED MESSAGE
+
+    socket.on("change deleted message", function(messageIDtoChange){
+      document.getElementById(messageIDtoChange).innerHTML = "<div class='message'><div class='message-details'>"+timestamp+" |</div>  <div hidden class='message-details'>ID: NA<b></b></div><div style='padding-top: 5px;'><i>Nachricht gelöscht</i></div></div>";
+    });
+
+    //---------------------------------------------
+
+  });
+</script>

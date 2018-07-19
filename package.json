@@ -9,9 +9,20 @@
   "author": "Tomislav",
   "license": "ISC",
   "dependencies": {
+    "bcryptjs": "*",
+    "body-parser": "*",
+    "connect-flash": "*",
+    "cookie-parser": "^1.4.1",
     "express": "*",
+    "express-handlebars": "*",
+    "express-messages": "*",
+    "express-session": "^1.15.6",
+    "express-validator": "*",
     "mysql": "^2.15.0",
     "npm": "^6.1.0",
+    "passport": "*",
+    "passport-http": "*",
+    "passport-local": "*",
     "socket.io": "*"
   }
 }

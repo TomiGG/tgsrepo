@@ -1,40 +1,107 @@
 var express = require("express");
+var path = require('path');
+var cookieParser = require('cookie-parser');
+var bodyParser = require('body-parser');
+var exphbs = require('express-handlebars');
+var expressValidator = require('express-validator');
+var flash = require('connect-flash');
+var bcrypt = require('bcryptjs');
 var app = express();
 var server = require("http").createServer(app);
 var io = require("socket.io").listen(server);
-var mysql = require("mysql");
+const db = require('./db.js');
 users = [];
 connections = [];
 
-//create connection to database
+//authentication packages
 
-var connection = mysql.createConnection({
-  host     : 'localhost',
-  user     : 'root',
-  password : 'test',
-  database : 'globalchat'
+var session = require('express-session');
+var passport = require('passport');
+var LocalStrategy = require('passport-local').Strategy;
+
+//routes
+
+var routes = require('./routes/index');
+var users = require('./routes/users');
+
+// View Engine
+app.set('views', path.join(__dirname, 'views'));
+app.engine('handlebars', exphbs({defaultLayout:'layout'}));
+app.set('view engine', 'handlebars');
+
+// BodyParser Middleware
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(expressValidator());
+app.use(cookieParser());
+
+// Set Static Folder
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Express Session
+app.use(session({
+    secret: 'dfasfajt65ghjd3sjhfghsafxcvsaj2nf4q94hkjb',
+    resave: false,
+    saveUninitialized: false,
+    //cookie: { secure: true }
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+app.use(function(req, res, next){
+  res.locals.isAuthenticated = req.isAuthenticated();
+  next();
 });
 
-//connect to database
+app.use(function(req, res, next){
+  res.locals.user = req.user;
+  next();
+});
 
-connection.connect(function(err){
-  if(err){
-    throw err;
-  }else{
-    console.log("Datenbankverbindung erfolgreich ...");
+app.use('/', routes);
+app.use('/users', users);
+
+passport.use(new LocalStrategy(
+  function(username, password, done) {
+    console.log(username);
+    console.log(password);
+
+    db.query('SELECT hash, username from user WHERE username=?',  [username], function(err, results, fields){
+      if(err){done(err)};
+      if(results.length === 0){
+        done(null, false);
+      }
+      const hash = results[0].hash.toString();
+      bcrypt.compare(password, hash, function(err, response){
+        if (response === true){
+          console.log(results[0].username);
+          const user_username = results[0].username;
+          return done(null, {user_username: results[0].username});
+        }else{
+          return done(null, false);
+        }
+      });
+    })
   }
+));
+
+passport.serializeUser(function(user_username, done) {
+  done(null, user_username);
 });
 
-server.listen(process.env.PORT || 80);
+passport.deserializeUser(function(user_username, done) {
+  done(null, user_username);
+});
+
+server.listen(process.env.PORT || 3000);
 
 console.log("Server running ...");
 
-app.get("/", function(request, response){
-  response.sendFile(__dirname + "/index.html");
-});
-
 io.sockets.on("connection", function(socket){
   connections.push(socket);
+  var address = socket.handshake.address;
+  console.log('New connection from ' + address.address + ':' + address.port);
   console.log("Connected: %s sockets connected", connections.length);
   io.sockets.emit("csc", connections.length);
   //Disconnect
@@ -47,9 +114,9 @@ io.sockets.on("connection", function(socket){
 
   //Send Messages
 
-  socket.on("send message", function(data){
-    io.sockets.emit("new message", {msg: data});
-    connection.query("INSERT INTO messages (message) VALUES ('" +data+ "');", function(err){
+  socket.on("send message", function(data, data2, data3){
+    socket.broadcast.emit("new message", {msg: data}, data2, data3);
+    db.query("INSERT INTO messages (user, message) VALUES ('" +data2+ "', '" +data+ "');", function(err){
       if(err){
         throw err;
       }else{
@@ -59,11 +126,11 @@ io.sockets.on("connection", function(socket){
   });
 
 
-  //Load messages
+  //Load messages first
 
-  socket.on("load messages", function(data, data2){
+  socket.on("load messages first", function(data, data2, user){
     console.log("DATA 2 " + data2);
-    connection.query("SELECT * FROM (SELECT * FROM messages ORDER BY id DESC LIMIT "+data+" OFFSET "+data2+") sub ORDER BY id DESC;", function(err, results){
+    db.query("SELECT * FROM (SELECT * FROM messages ORDER BY id DESC LIMIT "+data+" OFFSET "+data2+") sub ORDER BY id DESC;", function(err, results){
       if (err){
         throw err;
       }else{
@@ -72,12 +139,41 @@ io.sockets.on("connection", function(socket){
         socket.emit("set loaded messages", results);
       }
     });
+    db.query("SELECT * FROM marks WHERE user='"+user+"'", function(err, results){
+      if(err){
+        throw err;
+      }else{
+        socket.emit("set marks for user", results)
+      }
+    })
+  });
+
+  //Load messages
+
+  socket.on("load messages", function(data, data2, user){
+    console.log("DATA 2 " + data2);
+    db.query("SELECT * FROM (SELECT * FROM messages ORDER BY id DESC LIMIT "+data+" OFFSET "+data2+") sub ORDER BY id DESC;", function(err, results){
+      if (err){
+        throw err;
+      }else{
+        console.log("Letzten Nachrichten erfolgreich geladen.");
+        console.log(results);
+        socket.emit("set loaded messages", results);
+      }
+    });
+    db.query("SELECT * FROM marks WHERE user='"+user+"'", function(err, results){
+      if(err){
+        throw err;
+      }else{
+        socket.emit("set marks for user", results)
+      }
+    })
   });
 
   //Get ammount of messages
 
   socket.on("get all messages", function(){
-    connection.query("SELECT * FROM messages;", function(err, result){
+    db.query("SELECT * FROM messages;", function(err, result){
       if (err){
         throw err;
       }else{
@@ -90,6 +186,16 @@ io.sockets.on("connection", function(socket){
 
   socket.on("delete message", function(data){
     io.sockets.emit("change deleted message", data);
+  });
+
+  socket.on("mark message", function(id, user){
+    db.query("UPDATE messages SET marks = marks+1 WHERE id =" + id);
+    db.query("INSERT INTO marks VALUES('"+user+"', "+id+")");
+  });
+
+  socket.on("remove mark from message", function(id, user){
+    db.query("UPDATE messages SET marks = marks-1 WHERE id =" + id);
+    db.query("DELETE FROM marks WHERE marked='"+id+"'");
   });
 
 });
