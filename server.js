@@ -116,7 +116,7 @@ io.sockets.on("connection", function(socket){
 
   socket.on("send message", function(data, data2, data3){
     socket.broadcast.emit("new message", {msg: data}, data2, data3);
-    db.query("INSERT INTO messages (user, message) VALUES ('" +data2+ "', '" +data+ "');", function(err){
+    db.query("INSERT INTO messages (user, message, marks) VALUES ('" +data2+ "', '" +data+ "', 0);", function(err){
       if(err){
         throw err;
       }else{
