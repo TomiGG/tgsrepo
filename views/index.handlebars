@@ -184,7 +184,7 @@
       allMessages = allMessages + 1;
       var currentdate = new Date();
       timestamp = ("0"+currentdate.getHours()).slice(-2) + ":" + ("0"+currentdate.getMinutes()).slice(-2) + ":" + ("0"+currentdate.getSeconds()).slice(-2);
-      $messages.append(setupMessage(allMessages, timestamp, data2, data3, data.msg));
+      $messages.append(setupMessage(allMessages, timestamp, data2, data3, data.msg, 0));
       updateScroll();
     });
 
