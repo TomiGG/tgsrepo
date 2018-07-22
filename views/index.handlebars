@@ -134,7 +134,7 @@
         //$placeholderdiv.prepend("<div id='"+value['id']+"' class='message old-message'><div class='message-details'>" + timestamp + " | </div><div hidden class='message-details'>ID: <b>"+value['id']+"</b> | </div><div class='message-details'><b>"+value['user']+":</b> </div><div style='padding-top: 5px;'>" + value['message'] + "</div></div>");
       }
       old_message=false;
-      console.log("ALLMESSAGES AKTUELLER STAND: " + allMessages);
+      allMessages = allMessages + 25;
       updateScroll();
     });
 
