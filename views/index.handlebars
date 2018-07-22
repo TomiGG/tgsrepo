@@ -84,7 +84,7 @@
     var $colorpicker = $("button#colorpicker");
     var allMessages = 0;
 
-    socket.emit("load messages first", messagesLimit, offset, "{{user.user_username}}");
+    socket.emit("load messages first", messagesLimit, 0, "{{user.user_username}}");
 
     socket.emit("get all messages");
 
