@@ -88,8 +88,8 @@
     //------------------------------------------------NACHRICHTEN VORLAGE--------------------------------------------------------
 
     function setupMessage(message_id, timestamp, user, user_color, content, marks){
-      var userS = '"'+user+'"'
-      message = "<div id='"+message_id+"' class='message'>" + "<div class='message_timestamp'>" + timestamp + "&nbsp|</div><div onclick='markMessage(this, "+message_id+", "+userS+");' class='message_content_mark'></div><div class='message_marks_and_seperator' style='float: left; color: grey'><div style='float:left' class='message_content_mark_number'>"+marks+"</div>&nbsp|&nbsp</div>" + "<div class='message_user' style='color:"+user_color+";'><b>"+user+"</b>:&nbsp</div>" + "<div class='message_content'>" + content + "</div>" + "</div>";
+      var myUser = '"'+{{user.user_username}}+'"';
+      message = "<div id='"+message_id+"' class='message'>" + "<div class='message_timestamp'>" + timestamp + "&nbsp|</div><div onclick='markMessage(this, "+message_id+", "+myUser+");' class='message_content_mark'></div><div class='message_marks_and_seperator' style='float: left; color: grey'><div style='float:left' class='message_content_mark_number'>"+marks+"</div>&nbsp|&nbsp</div>" + "<div class='message_user' style='color:"+user_color+";'><b>"+user+"</b>:&nbsp</div>" + "<div class='message_content'>" + content + "</div>" + "</div>";
       if(old_message === true){
         message = message.replace(message.match("class='message'")[0], "class = 'message old_message'");
       }else{
