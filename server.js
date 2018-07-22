@@ -64,9 +64,6 @@ app.use('/users', users);
 
 passport.use(new LocalStrategy(
   function(username, password, done) {
-    console.log(username);
-    console.log(password);
-
     db.query('SELECT hash, username from user WHERE username=?',  [username], function(err, results, fields){
       if(err){done(err)};
       if(results.length === 0){
@@ -75,7 +72,6 @@ passport.use(new LocalStrategy(
       const hash = results[0].hash.toString();
       bcrypt.compare(password, hash, function(err, response){
         if (response === true){
-          console.log(results[0].username);
           const user_username = results[0].username;
           return done(null, {user_username: results[0].username});
         }else{
@@ -127,7 +123,6 @@ io.sockets.on("connection", function(socket){
   //Load messages first
 
   socket.on("load messages first", function(data, data2, user){
-    console.log("DATA 2 " + data2);
     db.query("SELECT * FROM (SELECT * FROM messages ORDER BY id DESC LIMIT "+data+" OFFSET "+data2+") sub ORDER BY id DESC;", function(err, results){
       if (err){
         throw err;
@@ -153,13 +148,10 @@ io.sockets.on("connection", function(socket){
   //Load messages
 
   socket.on("load messages", function(data, data2, user){
-    console.log("DATA 2 " + data2);
     db.query("SELECT * FROM (SELECT * FROM messages ORDER BY id DESC LIMIT "+data+" OFFSET "+data2+") sub ORDER BY id DESC;", function(err, results){
       if (err){
         throw err;
       }else{
-        console.log("Letzten Nachrichten erfolgreich geladen.");
-        console.log(results);
         socket.emit("set loaded messages", results);
       }
     });
@@ -180,7 +172,6 @@ io.sockets.on("connection", function(socket){
         throw err;
       }else{
         socket.emit("set all messages", result.length);
-        console.log("ALL MESSAGES: " + result.length)
       }
     });
   });

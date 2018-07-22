@@ -19,7 +19,6 @@
 
   function loadMessages(messagesToLoad){
     offset = offset + messagesToLoad + newmessages;
-    console.log("Offset " + offset);
     socket.emit("load messages", messagesLimit, offset, "{{user.user_username}}");
     offset = offset - newmessages;
     old_message=true;
@@ -97,7 +96,6 @@
       }
       //if(url){
         if(urlRegex.test(content) === true){
-          console.log(content.match(urlRegex));
           if (content.match(urlRegex)[0].startsWith("http" || "https" || "wwww")){
             message = message.replace(content.match(urlRegex)[0], "<a target='_blank' rel='noopener noreferrer' href='"+content.match(urlRegex)[0]+"'>" + content.match(urlRegex)[0] + "</a>")
           }else{
@@ -124,7 +122,6 @@
     //GELADENEN NACHRICHTEN WERDEN EINGEFÜGT
 
     socket.on("set loaded messages", function(data){
-      console.log(data);
       for(var key in data) {
         var value = data[key];
         var timestampRaw = value['timestamp'].split("T");
@@ -172,8 +169,6 @@
         alert("Gib was ein bevor du was schickst qija nanen");
       }else{
         e.preventDefault();
-        console.log("Submitted");
-        console.log("TEEEEEEEEEST" + sender);
         newmessages = newmessages + 1;
         allMessages = allMessages + 1;
         var currentdate = new Date();
@@ -202,7 +197,6 @@
     //USERS ONLINE
 
     socket.on("csc", function(data){
-      console.log("TEST TEST TEST " +  data);
       document.getElementById("users-online").innerHTML = "User online: <b>" + data + "</b>";
     });
 
