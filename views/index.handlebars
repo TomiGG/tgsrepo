@@ -83,25 +83,9 @@
     var $usersonline = $("#users-online");
     var $colorpicker = $("button#colorpicker");
     var allMessages = 0;
-
-    socket.emit("load messages first", messagesLimit, offset, "{{user.user_username}}");
-
-    socket.emit("get all messages");
-
-    socket.on("set all messages", function(data){
-      allMessages = data;
-      updateScroll();
-    });
-
-    socket.on('message mark changed', function(id, newValue){
-      var element = document.getElementById(id);
-      var element2 = element.getElementsByClassName("message_content_mark_number");
-      for(var i = 0; i < element2.length; i++){
-        element2[i].innerHTML = newValue;
-      }
-    });
-
     var message;
+
+    //------------------------------------------------NACHRICHTEN VORLAGE--------------------------------------------------------
 
     function setupMessage(message_id, timestamp, user, user_color, content, marks){
       var userS = '"'+user+'"'
@@ -131,7 +115,13 @@
       return message;
     }
 
-    //LOAD OLD MESSAGES
+    //---------------------------------------------------------------------------------------------------------------------------------
+
+    //DIE LETZTEN 26 NACHRICHTEN WERDEN GELADEN
+
+    socket.emit("load messages first", messagesLimit, offset, "{{user.user_username}}");
+
+    //GELADENEN NACHRICHTEN WERDEN EINGEFÜGT
 
     socket.on("set loaded messages", function(data){
       console.log(data);
@@ -144,7 +134,14 @@
         //$placeholderdiv.prepend("<div id='"+value['id']+"' class='message old-message'><div class='message-details'>" + timestamp + " | </div><div hidden class='message-details'>ID: <b>"+value['id']+"</b> | </div><div class='message-details'><b>"+value['user']+":</b> </div><div style='padding-top: 5px;'>" + value['message'] + "</div></div>");
       }
       old_message=false;
+      updateScroll();
     });
+
+    //GET MARKS OF USER
+
+    socket.emit('get marks of user', "{{user.user_username}}");
+
+    //GEMARKTE NACHRICHTEN VON USER WERDEN WIEDER GEMARKT
 
     socket.on("set marks for user", function(result){
       for(var key in result){
@@ -157,7 +154,15 @@
       }
     });
 
-    //---------------------------
+    //ES WIRD GESCHAUT OB SICH WAS AN EINEM MARK ÄNDERT (+ oder -) UND DER NEUE WERT WIRD ERSETZT
+
+    socket.on('message mark changed', function(id, newValue){
+      var element = document.getElementById(id);
+      var element2 = element.getElementsByClassName("message_content_mark_number");
+      for(var i = 0; i < element2.length; i++){
+        element2[i].innerHTML = newValue;
+      }
+    });
 
     //SUBMIT MESSAGE
 

@@ -135,10 +135,14 @@ io.sockets.on("connection", function(socket){
         throw err;
       }else{
         console.log("Letzten Nachrichten erfolgreich geladen.");
-        console.log(results);
         socket.emit("set loaded messages", results);
       }
     });
+  });
+
+  //GET MARKS OF USER
+
+  socket.on("get marks of user", function(user){
     db.query("SELECT * FROM marks WHERE user='"+user+"'", function(err, results){
       if(err){
         throw err;
@@ -178,6 +182,7 @@ io.sockets.on("connection", function(socket){
         throw err;
       }else{
         socket.emit("set all messages", result.length);
+        console.log("ALL MESSAGES: " + result.length)
       }
     });
   });
