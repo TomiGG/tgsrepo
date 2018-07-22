@@ -199,7 +199,7 @@ io.sockets.on("connection", function(socket){
 
   socket.on("remove mark from message", function(id, user, newValue){
     db.query("UPDATE messages SET marks = marks-1 WHERE id =" + id);
-    db.query("DELETE FROM marks WHERE marked='"+id+"'");
+    db.query("DELETE FROM marks WHERE marked='"+id+"' AND user='"+user+"'");
     socket.broadcast.emit('message mark changed', id, newValue);
   });
 
