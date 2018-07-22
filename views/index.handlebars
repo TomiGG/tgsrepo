@@ -56,17 +56,19 @@
   function markMessage(element, id, user){
     if(element.classList.contains('message_content_mark_active')){
       element.classList.remove('message_content_mark_active');
-      socket.emit('remove mark from message', id, user);
       var element2 = element.closest(".message").getElementsByClassName("message_content_mark_number");
       for(var i = 0; i < element2.length; i++){
         element2[i].innerHTML = parseInt(element2[i].innerHTML) - 1;
+        var newValue = element2[i].innerHTML;
+        socket.emit('remove mark from message', id, user, newValue);
       }
     }else{
       element.classList.add('message_content_mark_active');
-      socket.emit('mark message', id, user);
       var element2 = element.closest(".message").getElementsByClassName("message_content_mark_number");
       for(var i = 0; i < element2.length; i++){
         element2[i].innerHTML = parseInt(element2[i].innerHTML) + 1;
+        var newValue = element2[i].innerHTML;
+        socket.emit('mark message', id, user, newValue);
       }
     }
   }
@@ -91,12 +93,12 @@
       updateScroll();
     });
 
-    socket.on('get all likes', function(){
-      //Durch jedes div in messages gehen, id nehmen, schauen wieviele likes id hat, replacen
-    });
-
-    socket.on('get user specified likes', function(user){
-      //datenbank mit allen geliketen nachrichten durchsuchen, schauen welche nachricht user geliked hat und diese dann einfügen
+    socket.on('message mark changed', function(id, newValue){
+      var element = document.getElementById(id);
+      var element2 = element.getElementsByClassName("message_content_mark_number");
+      for(var i = 0; i < element2.length; i++){
+        element2[i].innerHTML = newValue;
+      }
     });
 
     var message;

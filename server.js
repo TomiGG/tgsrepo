@@ -188,14 +188,16 @@ io.sockets.on("connection", function(socket){
     io.sockets.emit("change deleted message", data);
   });
 
-  socket.on("mark message", function(id, user){
+  socket.on("mark message", function(id, user, newValue){
     db.query("UPDATE messages SET marks = marks+1 WHERE id =" + id);
     db.query("INSERT INTO marks VALUES('"+user+"', "+id+")");
+    socket.broadcast.emit('message mark changed', id, newValue);
   });
 
-  socket.on("remove mark from message", function(id, user){
+  socket.on("remove mark from message", function(id, user, newValue){
     db.query("UPDATE messages SET marks = marks-1 WHERE id =" + id);
     db.query("DELETE FROM marks WHERE marked='"+id+"'");
+    socket.broadcast.emit('message mark changed', id, newValue);
   });
 
 });
