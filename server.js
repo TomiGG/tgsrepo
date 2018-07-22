@@ -100,12 +100,9 @@ console.log("Server running ...");
 
 io.sockets.on("connection", function(socket){
   connections.push(socket);
-  var address = socket.handshake.address;
-  console.log('New connection from ' + address.address + ':' + address.port);
   console.log("Connected: %s sockets connected", connections.length);
   io.sockets.emit("csc", connections.length);
   //Disconnect
-
   socket.on("disconnect", function(data){
     connections.splice(connections.indexOf(socket), 1);
     console.log("Disconnected: %s sockets connected", connections.length);
@@ -119,6 +116,7 @@ io.sockets.on("connection", function(socket){
     db.query("INSERT INTO messages (user, message, marks) VALUES ('" +data2+ "', '" +data+ "', 0);", function(err){
       if(err){
         throw err;
+        console.log(err);
       }else{
         console.log("Nachricht erfolgreich eingefügt!!!");
       }
