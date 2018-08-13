@@ -78,9 +78,14 @@ input[type="text"]:focus{
   user-select: none;
   float:left;
   margin-left: 5px;
-  margin-right: 5px;
   padding-top: 1px;
+  
 }
+
+.message_content_mark_number{
+  margin-left: 5px;
+}
+
 .message_content_mark:hover{
   cursor: pointer;
   content: url("/assets/star_pressed.png");

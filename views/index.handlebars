@@ -38,7 +38,7 @@
     <div id="load-previous" onclick="loadMessages(20)">load previous</div>
     <div id="placeholder-div"></div>
   </div>
-  <form id="messageForm">
+  <form id="messageForm" autocomplete="off">
     <button id="colorpicker" type="button" class="jscolor {valueElement: 'color_value'}"></button>
     <label hidden>Message:</label>
     <input type="text" placeholder="Nachricht schreiben" id="message-to-send">
@@ -58,6 +58,9 @@
       var element2 = element.closest(".message").getElementsByClassName("message_content_mark_number");
       for(var i = 0; i < element2.length; i++){
         element2[i].innerHTML = parseInt(element2[i].innerHTML) - 1;
+        if(element2[i].innerHTML === '0'){
+          element2[i].style.display = 'none';
+        }
         var newValue = element2[i].innerHTML;
         socket.emit('remove mark from message', id, user, newValue);
       }
@@ -65,6 +68,7 @@
       element.classList.add('message_content_mark_active');
       var element2 = element.closest(".message").getElementsByClassName("message_content_mark_number");
       for(var i = 0; i < element2.length; i++){
+        element2[i].style.display = 'block';
         element2[i].innerHTML = parseInt(element2[i].innerHTML) + 1;
         var newValue = element2[i].innerHTML;
         socket.emit('mark message', id, user, newValue);
@@ -88,7 +92,13 @@
 
     function setupMessage(message_id, timestamp, user, user_color, content, marks){
       var myUser = '"{{user.user_username}}"';
-      message = "<div id='"+message_id+"' class='message'>" + "<div class='message_timestamp'>" + timestamp + "&nbsp|</div><div onclick='markMessage(this, "+message_id+", "+myUser+");' class='message_content_mark'></div><div class='message_marks_and_seperator' style='float: left; color: grey'><div style='float:left' class='message_content_mark_number'>"+marks+"</div>&nbsp|&nbsp</div>" + "<div class='message_user' style='color:"+user_color+";'><b>"+user+"</b>:&nbsp</div>" + "<div class='message_content'>" + content + "</div>" + "</div>";
+      var display;
+      if(marks === 0){
+        display = 'none';
+      }else{
+        display = 'block';
+      }
+      message = "<div id='"+message_id+"' class='message'>" + "<div class='message_timestamp'>" + timestamp + "&nbsp|</div><div onclick='markMessage(this, "+message_id+", "+myUser+");' class='message_content_mark'></div><div class='message_marks_and_seperator' style='float: left'; color: grey'><div style='float:left; display:"+display+"' class='message_content_mark_number'>"+marks+"</div>&nbsp|&nbsp</div>" + "<div class='message_user' style='color:"+user_color+";'><b>"+user+"</b>:&nbsp</div>" + "<div class='message_content'>" + content + "</div>" + "</div>";
       if(old_message === true){
         message = message.replace(message.match("class='message'")[0], "class = 'message old_message'");
       }else{
@@ -96,11 +106,17 @@
       }
       //if(url){
         if(urlRegex.test(content) === true){
-          if (content.match(urlRegex)[0].startsWith("http" || "https" || "wwww")){
-            message = message.replace(content.match(urlRegex)[0], "<a target='_blank' rel='noopener noreferrer' href='"+content.match(urlRegex)[0]+"'>" + content.match(urlRegex)[0] + "</a>")
-          }else{
-            message = message.replace(content.match(urlRegex)[0], "<a target='_blank' rel='noopener noreferrer' href='http://"+content.match(urlRegex)[0].trim()+"'>" + content.match(urlRegex)[0] + "</a>")
+          var contentSplit = content.split(' ');
+          for(var i=0; i < contentSplit.length; i++){
+            if(contentSplit[i].match(urlRegex)){
+              if (contentSplit[i].match(urlRegex)[0].startsWith("http" || "https" || "wwww")){
+                message = message.replace(contentSplit[i].match(urlRegex)[0], "<a target='_blank' rel='noopener noreferrer' href='"+contentSplit[i].match(urlRegex)[0]+"'>" + contentSplit[i].match(urlRegex)[0] + "</a>")
+              }else{
+                message = message.replace(contentSplit[i].match(urlRegex)[0], "<a target='_blank' rel='noopener noreferrer' href='http://"+contentSplit[i].match(urlRegex)[0].trim()+"'>" + contentSplit[i].match(urlRegex)[0] + "</a>")
+              }
+            }
           }
+
         }else{
           //BLEIBT LEER
         }
@@ -124,8 +140,10 @@
     socket.on("set loaded messages", function(data){
       for(var key in data) {
         var value = data[key];
-        var timestampRaw = value['timestamp'].split("T");
-        var timestamp = timestampRaw[1].split(".")[0];
+        dt = new Date(value['timestamp']);
+        timezoneOffset = -(dt.getTimezoneOffset() / 60);
+        dt.setHours(dt.getHours() + timezoneOffset)
+        var timestamp = dt.toString().split(' ')[4];
         allMessages = value['id'];
         $placeholderdiv.prepend(setupMessage(value['id'], timestamp, value['user'], "grey", value['message'], value['marks']));
         //$placeholderdiv.prepend("<div id='"+value['id']+"' class='message old-message'><div class='message-details'>" + timestamp + " | </div><div hidden class='message-details'>ID: <b>"+value['id']+"</b> | </div><div class='message-details'><b>"+value['user']+":</b> </div><div style='padding-top: 5px;'>" + value['message'] + "</div></div>");

@@ -90,7 +90,7 @@ passport.deserializeUser(function(user_username, done) {
   done(null, user_username);
 });
 
-server.listen(process.env.PORT || 80);
+server.listen(process.env.PORT || 3000);
 
 console.log("Server running ...");
 
@@ -109,7 +109,11 @@ io.sockets.on("connection", function(socket){
 
   socket.on("send message", function(data, data2, data3){
     socket.broadcast.emit("new message", {msg: data}, data2, data3);
-    db.query("INSERT INTO messages (user, message, marks) VALUES ('" +data2+ "', '" +data+ "', 0);", function(err){
+    var dt = new Date();
+    var timezone = -(dt.getTimezoneOffset() / 60);
+    dt.setHours(dt.getHours() - timezone);
+    var timestampUTC = dt;
+    db.query("INSERT INTO messages (timestamp, user, message, marks) VALUES ('" +timestampUTC+ "', '" +data2+ "', '" +data+ "', 0);", function(err){
       if(err){
         throw err;
         console.log(err);
