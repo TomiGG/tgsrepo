@@ -1,0 +1,56 @@
+* prüfen ob link 
+* wenn nicht mit http, https, www anfängt dann hinzufügen
+* mehrere links in einer nachricht (umsetzung: nach jedem space das wort mit regex prüfen)
+PROBLEM: 2 mal selber link in nachricht führt zu problem wegen replace methode (umsetzung: nicht aus der kompletten nachricht replacen, sondern jeden teil nach dem space checken und replacen)
+
+----
+
+* uhrzeit fixen
+
+----
+
+admin modus (kann alle nachrichten löschen, user bannen)
+
+----
+
+chaträume verschiedene sprachen 
+
+----
+
+filter (OPTIONAL, TENDENZ ZU NEIN)
+
+----
+
+design 
+
+----
+
+auf sicherheit prüfen
+
+----
+
+* nutzer mit pw 
+und ip
+
+----
+
+* like system ("marking")
+bei jeder nachricht die geliked/unliked wird, wird ein like hinzugefügt/entfernt und die top gelikte nachricht wird nochmal mit allen verglichen und aktuell angezeigt
+* bei 0 marks keine zahl anzeigen
+----
+
+custom icons 
+
+----
+
+user settings mit gestaltungsmöglichkeiten und standard einstellungen
+
+----
+
+möglichkeit finden geld mit der seite zu verdienen 
+
+----
+
+#DESIGN IDEEN#
+
+ähnlich wie bei windows kalender
