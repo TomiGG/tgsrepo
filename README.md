@@ -1,4 +1,3 @@
-"# globalchat" 
 # tgsrepo
-# tgsrepo
-# tgsrepo
+
+Kuku
